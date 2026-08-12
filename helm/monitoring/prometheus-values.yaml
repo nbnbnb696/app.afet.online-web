@@ -42,12 +42,11 @@ server:
   service:
     type: ClusterIP
 
-serverFiles:
-  prometheus.yml:
-    # Chart default already includes a 'kubernetes-pods' job that scrapes
-    # any pod annotated:
-    #   prometheus.io/scrape: "true"
-    #   prometheus.io/port: "<port>"
-    #   prometheus.io/path: "/metrics"   (optional, defaults to /metrics)
-    # Left as chart default intentionally — override here only if you need
-    # custom scrape jobs later.
+# No serverFiles override here on purpose: the chart's default prometheus.yml
+# already includes a 'kubernetes-pods' job that scrapes any pod annotated
+#   prometheus.io/scrape: "true"
+#   prometheus.io/port: "<port>"
+#   prometheus.io/path: "/metrics"   (optional, defaults to /metrics)
+# Setting serverFiles.prometheus.yml to an empty/null value here would DELETE
+# that default during Helm's values merge instead of preserving it — add a
+# serverFiles block only if you need to fully replace the scrape config.
