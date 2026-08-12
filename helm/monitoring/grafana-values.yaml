@@ -1,0 +1,50 @@
+# Values for grafana/grafana Helm chart
+# Goal: single Grafana pod, persistent dashboards, Prometheus pre-wired
+# as a datasource, exposed via existing nginx Ingress + cert-manager TLS.
+#
+# NOTE: admin password is intentionally NOT set here (avoid committing
+# secrets to a file). Pass it at install time — see install command below.
+
+replicas: 1
+
+persistence:
+  enabled: true
+  storageClassName: "managed-csi"   # AKS built-in CSI class = Standard SSD (LRS)
+  size: 2Gi
+  accessModes:
+    - ReadWriteOnce
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Auto-provision the Prometheus datasource so it's there on first login
+# instead of clicking through the UI. Assumes the Prometheus Helm release
+# is named "prometheus" in the "monitoring" namespace (service = prometheus-server).
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-server.monitoring.svc.cluster.local
+        isDefault: true
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - grafana.afet.online
+  path: /
+  pathType: Prefix
+  tls:
+    - secretName: grafana-afet-tls
+      hosts:
+        - grafana.afet.online

@@ -1,0 +1,53 @@
+# Values for prometheus-community/prometheus Helm chart
+# Goal: a single Prometheus server pod, scraping only app pods that opt in
+# via prometheus.io/scrape annotations (the chart's default scrape config
+# already does this — no serverFiles override needed).
+
+# --- Disable everything except the server, so we get exactly one pod ---
+alertmanager:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+
+# --- Server: single replica, persistent storage on Azure Disk (Standard SSD) ---
+server:
+  replicaCount: 1
+
+  retention: "15d"
+
+  persistentVolume:
+    enabled: true
+    storageClass: "managed-csi"   # AKS built-in CSI class = Standard SSD (LRS)
+    size: 16Gi
+    accessModes:
+      - ReadWriteOnce
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+  # Keep Prometheus internal-only; Grafana (in-cluster) talks to it via
+  # the ClusterIP service. No ingress/external exposure for Prometheus itself.
+  service:
+    type: ClusterIP
+
+serverFiles:
+  prometheus.yml:
+    # Chart default already includes a 'kubernetes-pods' job that scrapes
+    # any pod annotated:
+    #   prometheus.io/scrape: "true"
+    #   prometheus.io/port: "<port>"
+    #   prometheus.io/path: "/metrics"   (optional, defaults to /metrics)
+    # Left as chart default intentionally — override here only if you need
+    # custom scrape jobs later.
