@@ -35,6 +35,18 @@ datasources:
         url: http://prometheus-server.monitoring.svc.cluster.local
         isDefault: true
 
+# SMTP for Grafana alert notification emails. The password is NOT set here —
+# it's passed at install time via --set from the GRAFANA_SMTP_PASSWORD secret
+# (see .github/workflows/monitoring.yml), same pattern as adminPassword.
+grafana.ini:
+  smtp:
+    enabled: true
+    host: smtp.gmail.com:587
+    user: vbvbvb696@gmail.com
+    from_address: vbvbvb696@gmail.com
+    from_name: Grafana
+    startTLS_policy: MandatoryStartTLS
+
 ingress:
   enabled: true
   ingressClassName: nginx

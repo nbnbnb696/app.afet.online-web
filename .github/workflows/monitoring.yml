@@ -50,4 +50,5 @@ jobs:
           helm upgrade --install grafana grafana/grafana \
             -n monitoring -f helm/monitoring/grafana-values.yaml \
             --set adminPassword=${{ secrets.GRAFANA_ADMIN_PASSWORD }} \
+            --set grafana.ini.smtp.password=${{ secrets.GRAFANA_SMTP_PASSWORD }} \
             --wait
