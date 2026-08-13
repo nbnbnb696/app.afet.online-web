@@ -35,14 +35,20 @@ datasources:
         url: http://prometheus-server.monitoring.svc.cluster.local
         isDefault: true
 
-# SMTP for Grafana alert notification emails. The password is NOT set here —
-# it's passed at install time via --set from the GRAFANA_SMTP_PASSWORD secret
-# (see .github/workflows/monitoring.yml), same pattern as adminPassword.
+# SMTP for Grafana alert notification emails. The chart refuses (via its
+# assertNoLeakedSecrets check) to have a literal password anywhere in values,
+# so the password uses Grafana's own $__env{} variable-expansion syntax,
+# resolved at runtime from a real env var. That env var is populated from a
+# Kubernetes Secret named "grafana-smtp-secret" (created by monitoring.yml
+# from the GRAFANA_SMTP_PASSWORD GitHub secret, never committed here).
+envFromSecret: grafana-smtp-secret
+
 grafana.ini:
   smtp:
     enabled: true
     host: smtp.gmail.com:587
     user: vbvbvb696@gmail.com
+    password: '$__env{GF_SMTP_PASSWORD}'
     from_address: vbvbvb696@gmail.com
     from_name: Grafana
     startTLS_policy: MandatoryStartTLS

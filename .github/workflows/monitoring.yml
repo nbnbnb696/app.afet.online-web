@@ -45,16 +45,16 @@ jobs:
             -n monitoring -f helm/monitoring/prometheus-values.yaml \
             --wait
 
+      - name: Create Grafana SMTP secret
+        run: |
+          kubectl create secret generic grafana-smtp-secret \
+            --from-literal=GF_SMTP_PASSWORD='${{ secrets.GRAFANA_SMTP_PASSWORD }}' \
+            -n monitoring \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Deploy Grafana
         run: |
-          cat <<EOF > /tmp/grafana-smtp-secret.yaml
-          grafana.ini:
-            smtp:
-              password: "${{ secrets.GRAFANA_SMTP_PASSWORD }}"
-          EOF
           helm upgrade --install grafana grafana/grafana \
             -n monitoring -f helm/monitoring/grafana-values.yaml \
-            -f /tmp/grafana-smtp-secret.yaml \
             --set adminPassword=${{ secrets.GRAFANA_ADMIN_PASSWORD }} \
             --wait
-          rm -f /tmp/grafana-smtp-secret.yaml
