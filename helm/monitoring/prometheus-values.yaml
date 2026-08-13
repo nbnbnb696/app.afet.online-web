@@ -3,15 +3,20 @@
 # via prometheus.io/scrape annotations (the chart's default scrape config
 # already does this — no serverFiles override needed).
 
-# --- Disable everything except the server, so we get exactly one pod ---
+# --- Disable everything except the server + kube-state-metrics ---
 alertmanager:
   enabled: false
 
 prometheus-pushgateway:
   enabled: false
 
+# Needed for real pod status (Running/CrashLoopBackOff/restart counts) so we
+# can alert on "pod down" — cAdvisor alone only gives resource usage, not
+# Kubernetes-level pod health. Deploys as one small extra pod; its Service
+# carries a prometheus.io/scrape annotation by default, so the chart's
+# existing kubernetes-service-endpoints job picks it up automatically.
 kube-state-metrics:
-  enabled: false
+  enabled: true
 
 prometheus-node-exporter:
   enabled: false
