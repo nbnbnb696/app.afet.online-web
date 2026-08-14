@@ -47,6 +47,52 @@ server:
   service:
     type: ClusterIP
 
+  # extraScrapeConfigs APPENDS to the chart's default scrape_configs instead
+  # of replacing them (unlike serverFiles.prometheus.yml, which replaces the
+  # whole thing — see the warning below). Both jobs below probe the backend
+  # api's /actuator/health through the blackbox exporter: Spring Boot Actuator
+  # returns HTTP 200 when healthy and 503 when unhealthy, so the blackbox
+  # exporter's default "http_2xx" module (a plain 2xx-or-not check) already
+  # gives real up/down health as the probe_success metric, no backend
+  # code change needed. Two separate jobs on purpose — they answer different
+  # questions:
+  #   - internal: is the api application process itself healthy, isolated
+  #     from ingress/DNS/LB (probe_success here stays 1 even if the LB
+  #     health-probe bug from before recurs, since it bypasses that chain)
+  #   - external: can the outside world actually reach and use the api
+  #     end-to-end (DNS, LB, ingress, TLS, and the app) — this one *would*
+  #     go down if that ingress/LB bug recurs, which is correct: it means
+  #     real users are affected even though the app itself is fine
+  extraScrapeConfigs: |
+    - job_name: 'blackbox-actuator-health-internal'
+      metrics_path: /probe
+      params:
+        module: [http_2xx]
+      static_configs:
+        - targets:
+          - http://expensetracker-service.dev.svc.cluster.local/actuator/health
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - source_labels: [__param_target]
+          target_label: instance
+        - target_label: __address__
+          replacement: prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+    - job_name: 'blackbox-actuator-health-external'
+      metrics_path: /probe
+      params:
+        module: [http_2xx]
+      static_configs:
+        - targets:
+          - https://api-dev.afet.online/actuator/health
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - source_labels: [__param_target]
+          target_label: instance
+        - target_label: __address__
+          replacement: prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+
 # No serverFiles override here on purpose: the chart's default prometheus.yml
 # already includes a 'kubernetes-pods' job that scrapes any pod annotated
 #   prometheus.io/scrape: "true"

@@ -1,0 +1,18 @@
+# Values for prometheus-community/prometheus-blackbox-exporter Helm chart.
+# Goal: probe the backend api's /actuator/health over plain HTTP and expose
+# up/down as a Prometheus metric (probe_success), without needing any change
+# to the backend itself. The chart's default config already includes an
+# "http_2xx" module, which is exactly what's needed here — Spring Boot
+# Actuator returns HTTP 200 when healthy and 503 when unhealthy, so a plain
+# "was the response in the 2xx range" check already reflects real app health.
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+service:
+  type: ClusterIP

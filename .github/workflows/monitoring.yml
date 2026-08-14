@@ -39,6 +39,12 @@ jobs:
       - name: Create monitoring namespace
         run: kubectl apply -f helm/monitoring/namespace.yaml
 
+      - name: Deploy Blackbox Exporter
+        run: |
+          helm upgrade --install prometheus-blackbox-exporter prometheus-community/prometheus-blackbox-exporter \
+            -n monitoring -f helm/monitoring/blackbox-values.yaml \
+            --wait
+
       - name: Deploy Prometheus
         run: |
           helm upgrade --install prometheus prometheus-community/prometheus \
